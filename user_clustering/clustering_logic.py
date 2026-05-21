@@ -12,7 +12,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.mixture import GaussianMixture
 
 # =========================================================
-# [1] Data Extraction: Snowflake 데이터 추출 (Apache Arrow 최적화)
+# [1] Data Extraction: Snowflake 데이터 추출
 # =========================================================
 CACHED_CREDS = None 
 
