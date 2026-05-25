@@ -44,8 +44,7 @@ def get_conn():
 
 def fetch_data(target_date):
     """
-    SQL Injection 및 Date 포맷 에러를 방지하고, 
-    Apache Arrow 기반(fetch_pandas_all)으로 데이터를 초고속 추출합니다.
+    SQL Injection 및 Date 포맷 에러를 방지하고, 데이터를 추출합니다.
     """
     try:
         datetime.strptime(target_date, "%Y-%m-%d")
@@ -63,8 +62,8 @@ def fetch_data(target_date):
     try:
         cur = conn.cursor()
         cur.execute(query)
-        # 성능 최적화: fetchmany 대신 Arrow 포맷 기반 한 번에 추출
-        df = cur.fetch_pandas_all() 
+        # 데이터를 가져와서 DataFrame으로 변환
+        df = pd.DataFrame(cur.fetchall(), columns=[col[0] for col in cur.description])
         return df
     finally:
         cur.close()
