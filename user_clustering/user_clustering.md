@@ -24,8 +24,8 @@
 
 ## 🏗️ Architecture & Workflow (기술 워크플로우)
 
-1. **Data Extraction (데이터 수집 최적화)**
-   - **Snowflake:** 사내 데이터 웨어하우스에서 13개 행동 피처 및 RFM 데이터 집계. 기존 청크 단위 반복 추출 대신 Apache Arrow 기반의 `fetch_pandas_all()`을 전면 도입하여 메모리 병목 없이 대용량 유저 데이터를 초고속 로드.
+1. **Data Extraction (데이터 수집)**
+   - **Snowflake:** 사내 데이터 웨어하우스에서 13개 행동 피처 및 RFM 데이터 집계 후 파이썬 환경으로 로드.
    - **AWS Secrets Manager:** DB 자격 증명 및 민감 정보를 안전하게 복호화하여 로드.
 2. **Feature Engineering & Normalization (전처리 및 정규화)**
    - 극단적인 이상치(Outlier)의 스케일 영향을 최소화하기 위해 중앙값과 IQR을 사용하는 **`RobustScaler`** 적용.
@@ -42,7 +42,7 @@
 ## 🛠️ Tech Stack
 - **Language:** Python 3.8+
 - **Machine Learning:** Scikit-learn (GaussianMixture, RobustScaler), Pandas, Numpy, Scipy (stats)
-- **Data Warehouse:** Snowflake (Apache Arrow Connector)
+- **Data Warehouse:** Snowflake
 - **Cloud Infrastructure:** AWS Lambda, AWS S3, AWS ECR, AWS Secrets Manager, EventBridge
 - **Containerization:** Docker
 
@@ -52,7 +52,7 @@
 
 ### 1. 극단적 비대칭(Right-Skewed) 분포로 인한 전통 모델의 붕괴와 정규성 검증
 - **Issue:** 세탁 비즈니스의 결제 금액과 이용 횟수는 0 부근에 대다수의 일반 고객이 밀집해 있고, 소수의 VVIP 유저가 우측으로 극단적인 롱테일(Long-tail)을 그리는 심각한 비대칭 구조를 가집니다. 이로 인해 K-Means는 구형 구조의 한계로 오작동하고, HDBSCAN은 핵심 자산인 VVIP를 70% 이상 노이즈로 인식해 버리는 문제가 있었습니다. GMM 역시 원본 데이터 상태로는 '정규분포 가정'이 깨져 사용이 불가능했습니다.
-- **Resolution (수학적 가정 충증 및 시각적 입증):** 전처리 파이프라인에 `np.log1p` 및 `np.sqrt` 중첩 변환을 도입하여 우측 꼬리를 압축함으로써 데이터를 가우시안 혼합 분포 형태로 유도했습니다. 실험 결과, 롱테일 분포가 완벽한 다중 정규분포 형태로 치환되었으며, Q-Q Plot 상에서 데이터 점들이 기준선에 일직선으로 정렬되며 정규성을 완벽히 충족함을 시각적·수학적으로 증명하여 GMM 모델의 당위성을 확보했습니다.
+- **Resolution (수학적 가정 충족 및 시각적 입증):** 전처리 파이프라인에 `np.log1p` 및 `np.sqrt` 중첩 변환을 도입하여 우측 꼬리를 압축함으로써 데이터를 가우시안 혼합 분포 형태로 유도했습니다. 실험 결과, 롱테일 분포가 완벽한 다중 정규분포 형태로 치환되었으며, Q-Q Plot 상에서 데이터 점들이 기준선에 일직선으로 정렬되며 정규성을 완벽히 충족함을 시각적·수학적으로 증명하여 GMM 모델의 당위성을 확보했습니다.
 
 ### 2. 매월 가변적인 K값으로 인한 데이터베이스 적재 정합성 리스크
 - **Issue:** 파이프라인 내에 AIC 기반 자동 엘보우 탐색 로직을 구현함에 따라 매월 배치가 돌 때마다 최적의 군집 수($K$)와 군집의 ID(Index)가 유동적으로 변할 수 있습니다. 이는 실시간 백엔드 DB 테이블에 유저 히스토리를 적재할 때 컬럼 구조가 뒤틀리거나 과거 데이터와 매핑이 무너지는 데이터 정합성 리스크를 발생시켰습니다.
