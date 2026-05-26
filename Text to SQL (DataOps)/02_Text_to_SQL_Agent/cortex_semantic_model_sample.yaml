@@ -1,0 +1,87 @@
+# =============================================================================
+# [SECURITY NOTICE] 
+# 본 명세서는 사내 구독 요금제(Subscription)의 품목별 차감 단가를 
+# AI가 정확히 계산하도록 유도하기 위해 추상화된 세만틱 모델 예시입니다.
+# =============================================================================
+
+name: TEXT_TO_SQL_SUBSCRIPTION_REVENUE_MODEL
+tables:
+  # ---------------------------------------------------------------------------
+  # 1. 구독 요금제 세부 품목 및 단가 요약 테이블 (AI를 위한 논리적 집계 뷰)
+  # (사용자 쿼리의 category_base 및 laundry_plan_item_summary 역할)
+  # ---------------------------------------------------------------------------
+  - name: PLAN_ITEM_SUMMARY
+    description: >
+      구독 요금제(Laundry Plan)의 세탁권/품목별 차감 단가(Discount Unit Price)가 계산된 요약 테이블입니다.
+      구독 요금제 이용자의 '특정 품목(예: 와이셔츠) 매출'을 계산하려면 반드시 이 테이블의 SUBTRACT_CATEGORY와 JOIN하여 단가를 곱해야 합니다.
+    base_table:
+      database: "[MASKED_DB]"
+      schema: PUBLIC
+      table: VIEW_PLAN_ITEM_SUMMARY # 복잡한 CTE를 View로 만들어 AI에게 제공
+    dimensions:
+      - name: PLAN_ID
+        description: "구독 요금제의 고유 ID"
+        expr: PLAN_ID
+        data_type: NUMBER(38,0)
+      - name: SUBTRACT_CATEGORY
+        description: "차감 대상 카테고리 (laundry_count, shirt_count, bedding_count, cleaning_count, launX_count)"
+        expr: SUBTRACT_CATEGORY
+        data_type: VARCHAR
+    measures:
+      - name: DISCOUNT_UNIT_PRICE
+        description: "해당 카테고리의 1개당 할인 적용 차감 단가"
+        expr: DISCOUNT_UNIT_PRICE
+        data_type: FLOAT
+
+  # ---------------------------------------------------------------------------
+  # 2. 개별 수거 신청 및 세탁 품목 테이블 (실제 세탁 발생 내역)
+  # (사용자 쿼리의 wash_info 역할)
+  # ---------------------------------------------------------------------------
+  - name: WASH_ORDER_ITEM
+    description: >
+      고객이 실제로 세탁을 맡긴 품목별 상세 내역입니다. 
+      정상 건만 집계하기 위해 반드시 STATUS NOT IN (4, 17) 필터를 적용해야 합니다.
+    base_table:
+      database: "[MASKED_DB]"
+      schema: PUBLIC
+      table: WASH_ORDER_ITEM
+    dimensions:
+      - name: PLAN_ID
+        description: "해당 세탁 건에 적용된 구독 요금제 ID (자유이용인 경우 NULL)"
+        expr: PLAN_ID
+        data_type: NUMBER(38,0)
+      - name: SUBTRACT_CATEGORY
+        description: "세탁 품목에 따른 차감 카테고리 분류 (생활빨래, 와이셔츠 등)"
+        expr: SUBTRACT_CATEGORY
+        data_type: VARCHAR
+    measures:
+      - name: ITEM_SUBTRACT_COUNT
+        description: "실제로 차감된 세탁물의 수량 (SUBTRACT 타입인 경우의 ITEM_QUANTITY)"
+        expr: ITEM_SUBTRACT_COUNT
+        data_type: NUMBER(38,0)
+    time_dimensions:
+      - name: CREATED_DATE
+        description: "수거 신청 생성 일자"
+        expr: CREATED_DATE
+        data_type: DATE
+    facts:
+      - name: valid_wash_filter
+        description: "취소 및 미수거 건을 제외하는 필수 필터"
+        expr: "STATUS NOT IN (4, 17)"
+        labels:
+          - filter
+
+# ---------------------------------------------------------------------------
+# [RELATIONSHIPS] AI가 구독 요금제 단가를 찾기 위해 스스로 JOIN 하도록 명시
+# ---------------------------------------------------------------------------
+relationships:
+  - name: WASH_ITEM_TO_PLAN_SUMMARY
+    left_table: WASH_ORDER_ITEM
+    right_table: PLAN_ITEM_SUMMARY
+    relationship_columns:
+      - left_column: PLAN_ID
+        right_column: PLAN_ID
+      - left_column: SUBTRACT_CATEGORY
+        right_column: SUBTRACT_CATEGORY
+    relationship_type: many_to_one
+    join_type: left
