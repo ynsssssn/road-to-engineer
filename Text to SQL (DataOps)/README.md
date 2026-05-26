@@ -11,14 +11,15 @@
 
 ```mermaid
 graph TD
-    subgraph "Phase 1 & 2: 아날로그 교육 및 프로세스화"
-        A[현업 부서] -->|단순 쿼리 요청| B(데이터 분석가 병목 발생)
-        B -.->|SQL 스터디 및 템플릿 제공| A
-    end
-
-    subgraph "Phase 3: Text-to-SQL AI 자동화 구축 (To-Be)"
+    subgraph "Phase 3: Text-to-SQL AI 자동화 구축 (TO-BE)"
         C[현업 부서] -->|자연어 질문 입력| D{Snowflake Cortex Analyst}
         D -->|SQL 자동 생성 및 데이터 추출| C
         E[데이터 분석가] -->|YAML 데이터 명세서 작성<br/>도메인 룰 및 필터 주입| D
         D -->|쿼리 실행| F[(사내 데이터 웨어하우스)]
     end
+
+    subgraph "Phase 1 & 2: 아날로그 교육 및 프로세스화 (AS-IS)"
+        A[현업 부서] -->|단순 쿼리 요청| B(데이터 분석가 병목 발생)
+        B -.->|SQL 스터디 및 템플릿 제공| A
+    end
+
