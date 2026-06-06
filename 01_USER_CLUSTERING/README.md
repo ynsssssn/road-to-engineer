@@ -2,6 +2,7 @@
 
 유저의 행동 지표(RFM 및 13개 고유 행동 Feature)를 분석하여 정교한 고객 페르소나를 정의하고, GMM 기반 클러스터링과 자동 네이밍 시스템을 통해 마케팅 액션을 자동화하는 End-to-End 머신러닝 파이프라인입니다. AWS Lambda와 Snowflake를 연동하여 매월 서버리스 환경에서 안전하게 구동되도록 구축했습니다.
 
+```mermaid
 graph TD
     %% 데이터 수집 단계
     subgraph Storage [Data Warehouse]
@@ -35,8 +36,7 @@ graph TD
     style Preprocessing fill:#bbf,stroke:#333,stroke-width:2px
     style ML_Engine fill:#ff9,stroke:#333,stroke-width:2px
     style Downstream fill:#bfb,stroke:#333,stroke-width:2px
-
-
+    
 ---
 
 ## 💡 Business Background & Problem Solving (비즈니스 배경 및 문제 해결의 고민)
