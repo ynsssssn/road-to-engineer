@@ -68,3 +68,39 @@
 ## 🔒 Security
 - 본 레포지토리에 업로드된 파이썬 스크립트(`user_clustering_pipeline.py`) 내의 자동 네이밍 함수(`get_automated_cluster_names`)는 사내 의사결정에 필요한 CRM 타겟팅 핵심 로직 및 주요 비즈니스 조건문을 포함하고 있습니다.
 - 따라서 해당 비즈니스 로직 조건부 영역은 **사내 보안 및 거버넌스 규정에 따라 코드를 생략 및 마스킹 처리**하였으며, 그 외 데이터 추출, 수학적 전처리, ML 파인튜닝 파이프라인 구조는 운영 환경과 동일하게 퍼블릭으로 공개되어 있습니다.
+
+
+
+graph TD
+    %% 데이터 수집 단계
+    subgraph Storage [Data Warehouse]
+        A[(Snowflake DB)] -->|User Behavior & RFM Data| B(Python Connector)
+    end
+
+    %% 데이터 전처리 및 수학적 가설 검증 단계
+    subgraph Preprocessing [Feature Engineering & Scaling]
+        B --> C{Skewed Distribution?}
+        C -->|Yes: Right-Skewed 롱테일| D[np.log1p / np.sqrt 변환]
+        D -->|다중 가우시안 정규성 충족| E[RobustScaler 적용]
+    end
+
+    %% 모델링 및 파인튜닝 단계
+    subgraph ML_Engine [GMM Clustering Engine]
+        E --> F[AIC/BIC Hyperparameter Tuning]
+        F -->|최적 엘보우 포인트 K 자동 산출| G[Gaussian Mixture Model Fit]
+        G -->|타원형 공분산 구조 적용| H[User Cluster Labeling]
+    end
+
+    %% 데이터 활용 및 서빙 단계
+    subgraph Downstream [CRM & Activation]
+        H --> I[MECE Waterfall 조건문 기반 자동 네이밍]
+        I --> J[CSV Snapshot Export to AWS S3]
+        J -->|Sync| K[Braze CRM Tool]
+        K -->|Targeting Action| L[VIP 이탈률 5% 감소 달성]
+    end
+
+    %% 스타일 세팅
+    style Storage fill:#f9f,stroke:#333,stroke-width:2px
+    style Preprocessing fill:#bbf,stroke:#333,stroke-width:2px
+    style ML_Engine fill:#ff9,stroke:#333,stroke-width:2px
+    style Downstream fill:#bfb,stroke:#333,stroke-width:2px
