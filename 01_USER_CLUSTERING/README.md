@@ -2,6 +2,41 @@
 
 유저의 행동 지표(RFM 및 13개 고유 행동 Feature)를 분석하여 정교한 고객 페르소나를 정의하고, GMM 기반 클러스터링과 자동 네이밍 시스템을 통해 마케팅 액션을 자동화하는 End-to-End 머신러닝 파이프라인입니다. AWS Lambda와 Snowflake를 연동하여 매월 서버리스 환경에서 안전하게 구동되도록 구축했습니다.
 
+graph TD
+    %% 데이터 수집 단계
+    subgraph Storage [Data Warehouse]
+        A[(Snowflake DB)] -->|User Behavior & RFM Data| B(Python Connector)
+    end
+
+    %% 데이터 전처리 및 수학적 가설 검증 단계
+    subgraph Preprocessing [Feature Engineering & Scaling]
+        B --> C{Skewed Distribution?}
+        C -->|Yes: Right-Skewed 롱테일| D[np.log1p / np.sqrt 변환]
+        D -->|다중 가우시안 정규성 충족| E[RobustScaler 적용]
+    end
+
+    %% 모델링 및 파인튜닝 단계
+    subgraph ML_Engine [GMM Clustering Engine]
+        E --> F[AIC/BIC Hyperparameter Tuning]
+        F -->|최적 엘보우 포인트 K 자동 산출| G[Gaussian Mixture Model Fit]
+        G -->|타원형 공분산 구조 적용| H[User Cluster Labeling]
+    end
+
+    %% 데이터 활용 및 서빙 단계
+    subgraph Downstream [CRM & Activation]
+        H --> I[MECE Waterfall 조건문 기반 자동 네이밍]
+        I --> J[CSV Snapshot Export to AWS S3]
+        J -->|Sync| K[Braze CRM Tool]
+        K -->|Targeting Action| L[VIP 이탈률 5% 감소 달성]
+    end
+
+    %% 스타일 세팅
+    style Storage fill:#f9f,stroke:#333,stroke-width:2px
+    style Preprocessing fill:#bbf,stroke:#333,stroke-width:2px
+    style ML_Engine fill:#ff9,stroke:#333,stroke-width:2px
+    style Downstream fill:#bfb,stroke:#333,stroke-width:2px
+
+
 ---
 
 ## 💡 Business Background & Problem Solving (비즈니스 배경 및 문제 해결의 고민)
@@ -71,36 +106,3 @@
 
 
 
-graph TD
-    %% 데이터 수집 단계
-    subgraph Storage [Data Warehouse]
-        A[(Snowflake DB)] -->|User Behavior & RFM Data| B(Python Connector)
-    end
-
-    %% 데이터 전처리 및 수학적 가설 검증 단계
-    subgraph Preprocessing [Feature Engineering & Scaling]
-        B --> C{Skewed Distribution?}
-        C -->|Yes: Right-Skewed 롱테일| D[np.log1p / np.sqrt 변환]
-        D -->|다중 가우시안 정규성 충족| E[RobustScaler 적용]
-    end
-
-    %% 모델링 및 파인튜닝 단계
-    subgraph ML_Engine [GMM Clustering Engine]
-        E --> F[AIC/BIC Hyperparameter Tuning]
-        F -->|최적 엘보우 포인트 K 자동 산출| G[Gaussian Mixture Model Fit]
-        G -->|타원형 공분산 구조 적용| H[User Cluster Labeling]
-    end
-
-    %% 데이터 활용 및 서빙 단계
-    subgraph Downstream [CRM & Activation]
-        H --> I[MECE Waterfall 조건문 기반 자동 네이밍]
-        I --> J[CSV Snapshot Export to AWS S3]
-        J -->|Sync| K[Braze CRM Tool]
-        K -->|Targeting Action| L[VIP 이탈률 5% 감소 달성]
-    end
-
-    %% 스타일 세팅
-    style Storage fill:#f9f,stroke:#333,stroke-width:2px
-    style Preprocessing fill:#bbf,stroke:#333,stroke-width:2px
-    style ML_Engine fill:#ff9,stroke:#333,stroke-width:2px
-    style Downstream fill:#bfb,stroke:#333,stroke-width:2px
