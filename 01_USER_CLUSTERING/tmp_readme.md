@@ -1,3 +1,4 @@
+```mermaid
 graph TD
     %% 데이터 수집 단계
     subgraph Storage [Data Warehouse]
