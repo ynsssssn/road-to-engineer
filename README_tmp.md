@@ -2,8 +2,8 @@
 
 > 사내 유일의 데이터 담당자로서 데이터 추출, ML 모델링, MLOps 파이프라인 및 DW 인프라를 독자 구축하고 운영한 기록입니다.
 
-## 🛠️ Tech Stacks
-*### ⚡ Tech Stack
+### 🛠️ Tech Stacks
+
 <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white"/> <img src="https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white"/> <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=flat-square&logo=tensorflow&logoColor=white"/> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white"/>
 
 ### ☁️ Data Tools
