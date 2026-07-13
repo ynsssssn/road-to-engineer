@@ -18,6 +18,7 @@
 
 
 ## 🏗️ System Architecture
+```mermaid
 graph LR
     %% 데이터 소스 및 서빙 아키텍처
     A[Snowflake DW] -->|1. Cortex Analyst 데이터 자동 서빙| B(AI Agent)
