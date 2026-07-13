@@ -37,6 +37,3 @@ graph LR
     E -->|6. 예측 데이터 서빙 / 자동 트리거| F[Braze 및 사내 시스템]
     F -->|7. 맞춤형 마케팅 및 팩토리 출고 공정 활용| F_Biz[실제 비즈니스 현장 임팩트]
 
-    %% 스타일링 (시각적 구분)
-    style B_User fill:#f9f,stroke:#333,stroke-width:2px
-    style F_Biz fill:#bbf,stroke:#333,stroke-width:2px
