@@ -19,22 +19,26 @@
 
 ## 🏗️ System Architecture
 ```mermaid
+
 graph LR
     %% 데이터 소스 및 서빙 아키텍처
-    A[Snowflake DW] -->|1. Cortex Analyst 데이터 자동 서빙| B(AI Agent)
-    B -->|2. 유저의 AI 기반 데이터 분석 활용| B_User[사내 비개발 직군 및 실무자]
+    A[Snowflake DW] -->|1. Cortex Analyst| B(AI Agent)
+    B -->|2. 유저의 AI기반 분석 활용| B_User[사내 비개발 직군]
 
     %% 분석 및 배치 파이프라인
-    A -->|3. 예측 대상 유저 및 물량 데이터 추출| C[AWS Lambda]
+    A -->|3. 예측 대상 및 물량 추출| C[AWS Lambda]
     
-    subgraph 서버리스 실행 환경 (Container Environment)
-        C -->|4. 머신러닝 모델 구동 및 배치 실행| D[Docker Engine]
+    %% subgraph 오류 수정 (따옴표 활용 및 컴팩트한 ID)
+    subgraph Container_Env ["서버리스 실행 환경"]
+        C -->|4. ML 모델 및 배치 실행| D[Docker Engine]
     end
     
-    D -->|5. 세그먼트 및 물량 예측 결과 적재| E[S3 Storage]
+    D -->|5. 세그먼트/물량 결과 적재| E[S3 Storage]
     
     %% 최종 비즈니스 활용
-    E -->|6. 예측 데이터 서빙 / 자동 트리거| F[Braze 및 사내 시스템]
-    F -->|7. 맞춤형 마케팅 및 팩토리 출고 공정 활용| F_Biz[실제 비즈니스 현장 임팩트]
+    E -->|6. 예측 서빙/자동 트리거| F[Braze 및 사내 시스템]
+    F -->|7. 맞춤형 마케팅/출고 공정 활용| F_Biz[비즈니스 현장]
 
-    
+    %% 스타일링 (시각적 구분)
+    style B_User fill:#f9f,stroke:#333,stroke-width:2px
+    style F_Biz fill:#bbf,stroke:#333,stroke-width:2px
