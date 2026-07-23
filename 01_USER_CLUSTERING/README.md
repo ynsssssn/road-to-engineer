@@ -70,7 +70,7 @@ def find_best_k_by_aic_elbow(X, min_k=10, max_k=25):
         gmm.fit(X)
         aic_scores.append(gmm.aic(X))
         
-    # 2차 차분(기울기 변화량)을 통해 꺾이는 지점(Elbow) 탐색
+    # 2차 차분을 통해 꺾이는 지점(Elbow) 탐색
     aic_diff1 = np.diff(aic_scores)
     aic_diff2 = np.diff(aic_diff1)
     
