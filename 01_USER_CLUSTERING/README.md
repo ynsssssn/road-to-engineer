@@ -84,10 +84,14 @@ def find_best_k_by_aic_elbow(X, min_k=10, max_k=25):
 
 ---
 
-## 🛠️ Troubleshooting: 컨테이너 기반 Lambda 배포 및 실행 오류 해결
+## 🛠️ Troubleshooting: 컨테이너 기반 Lambda 배포 및 환경 불일치 해결
 
-Lambda를 컨테이너 이미지(Docker)로 배포하는 과정에서 발생한 모듈 인식 및 버전 충돌 문제를 다음 3단계의 시도를 거쳐 해결했습니다.
+로컬 개발 환경과 AWS Lambda 컨테이너 실행 환경 간의 버전을 맞추고, Cross-Platform 빌드 문제를 해결한 2단계 트러블슈팅 과정입니다.
 
-1. **시도 A (모듈 경로 및 핸들러 수정):** 배포 직후 `ImportModuleError`가 발생했습니다. 확인 결과 Lambda 컨테이너가 실행 파일을 패키지 디렉토리로 오인하는 문제였습니다. `Dockerfile`의 실행 커맨드를 `app.py.lambda_handler`에서 `app.lambda_handler`로 수정하여 올바른 진입점을 매핑했습니다.
-2. **시도 B (크로스 플랫폼 빌드 및 캐시 무효화):** 패키지 버전이 꼬이는 현상을 방지하기 위해 로컬 캐시를 무시했습니다. 또한, 로컬(Mac)과 AWS Lambda(Linux) 간의 아키텍처 불일치를 해결하고자 도커 빌드 시 `--platform linux/amd64`, `--provenance=false`, `--no-cache` 옵션을 강제하여 호환성을 확보했습니다.
-3. **시도 C (최종 반영 파이프라인 정립):** 이미지를 ECR에 Push했음에도 Lambda가 과거 코드를 실행하는 이슈가 있었습니다. 컨테이너 기반 Lambda는 ECR 업데이트를 자동으로 감지하지 않음을 파악하고, 최종적으로 Lambda 콘솔에서 명시적으로 [새 이미지 배포]를 트리거하는 프로세스를 정립하여 파이프라인을 완성했습니다.
+1. **Scikit-learn 패키지 버전 mismatch 및 C-extension 빌드 에러 해결:**
+   * **문제:** 로컬 환경에서 잘 돌아가던 Scikit-learn 및 C 기반 의존성 라이브러리가 Lambda 컨테이너 실행 환경(Linux OS)에서 binary/C-extension 버전 불일치로 인해 `ImportError`를 발생시켰습니다.
+   * **해결:** `Dockerfile` 내부의 Python base 이미지 버전을 Lambda 지원 버전과 완전 일치시키고, `--no-cache-dir` 옵션 및 최신 `pip` 업그레이드를 통해 복잡한 C-compiled 라이브러리가 컨테이너 환경 내에서 올바르게 빌드 및 바인딩되도록 파이프라인을 정립했습니다.
+
+2. **Mac(ARM)과 AWS Lambda(x86_64) 아키텍처 불일치 해결:**
+   * **문제:** Apple Silicon(Mac M1/M2) 로컬 환경에서 빌드한 Docker 이미지를 ECR에 Push했을 때, x86_64 기반인 AWS Lambda에서 `exec user process caused "exec format error"`가 발생하며 실행이 차단되었습니다.
+   * **해결:** 도커 이미지 빌드 시 `--platform linux/amd64` 옵션을 명시적으로 추가하여, 로컬 환경과 상관없이 타깃 클라우드 인프라(AWS Lambda) 맞춤형 아키텍처로 빌드되도록 교정했습니다.
