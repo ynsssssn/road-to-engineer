@@ -50,7 +50,7 @@ graph LR
 
 단순히 하드코딩된 K값을 사용하는 것을 넘어, 매월 변동하는 데이터 볼륨에 맞춰 **최적의 군집 수(K)를 동적으로 탐색하는 로직**을 구현했습니다. 
 
-GMM(Gaussian Mixture Model)을 학습시키고, 모델의 정보 손실량(AIC) 기울기가 가장 급격하게 변하는 지점(Elbow Point)을 2차 차분(2nd Derivative)으로 자동 계산합니다.
+GMM 모델을 학습시키고, AIC 기울기가 가장 급격하게 변하는 지점을 2차 차분으로 자동 계산합니다.
 
 ```python
 import numpy as np
