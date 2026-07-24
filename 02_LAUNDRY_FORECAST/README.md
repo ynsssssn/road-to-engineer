@@ -25,27 +25,29 @@
 
 ```mermaid
 graph LR
-    %% 1. 데이터 소스
-    subgraph Data Sources
+    %% 1. 데이터 소스 (ID는 언더바, 표시 이름은 따옴표)
+    subgraph Data_Sources ["Data Sources"]
         A[(Snowflake)] -->|과거 주문량| C(데이터 전처리)
         B[기상청 API] -->|과거 기상| C
     end
     
     %% 2. 서버리스 ML 파이프라인
-    subgraph ML Pipeline
+    subgraph ML_Pipeline ["ML Pipeline"]
         C -->|지연 로딩| D(기온 예측 & Trigger 파생)
         D -->|Prophet 학습| E(미래 60일 물량 예측)
     end
     
-    %% 3. 서빙 및 활용
-    subgraph Output & BI
+    %% 3. 서빙 및 활용 (& 기호 대신 안전한 문구 사용)
+    subgraph Output_BI ["Output / BI"]
         E -->|JSON Webhook| F[Google Apps Script]
         F -->|XLOOKUP 매핑 및 동결| G[전사 대시보드]
     end
 
-    style Data Sources fill:#f9f,stroke:#333,stroke-width:2px
-    style ML Pipeline fill:#bbf,stroke:#333,stroke-width:2px
-    style Output & BI fill:#bfb,stroke:#333,stroke-width:2px
+    %% 스타일 세팅 (에러 유발 원인인 & 제거 후 ID로 지정)
+    style Data_Sources fill:#f9f,stroke:#333,stroke-width:2px
+    style ML_Pipeline fill:#bbf,stroke:#333,stroke-width:2px
+    style Output_BI fill:#bfb,stroke:#333,stroke-width:2px
+
 ```
 
 
