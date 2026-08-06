@@ -9,3 +9,7 @@ __pycache__/
 .env
 *.pem
 secrets.json
+
+# 압축 배포 파일 (추가 추천)
+*.zip
+retention_lambda_deploy.zip
