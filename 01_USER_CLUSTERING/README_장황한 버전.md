@@ -1,0 +1,108 @@
+# 👥 유저 클러스터링 및 CRM 개인화 타겟팅 자동화 파이프라인 (User Clustering & CRM Targeting Pipeline)
+
+유저의 행동 지표(RFM 및 13개 고유 행동 Feature)를 분석하여 정교한 고객 페르소나를 정의하고, GMM 기반 클러스터링과 자동 네이밍 시스템을 통해 마케팅 액션을 자동화하는 End-to-End 머신러닝 파이프라인입니다. AWS Lambda와 Snowflake를 연동하여 매월 서버리스 환경에서 안전하게 구동되도록 구축했습니다.
+
+```mermaid
+graph TD
+    %% 데이터 수집 단계
+    subgraph Storage [Data Warehouse]
+        A[(Snowflake DB)] -->|User Behavior & RFM Data| B(Python Connector)
+    end
+
+    %% 데이터 전처리 및 수학적 가설 검증 단계
+    subgraph Preprocessing [Feature Engineering & Scaling]
+        B --> C{Skewed Distribution?}
+        C -->|Yes: Right-Skewed 롱테일| D[np.log1p / np.sqrt 변환]
+        D -->|다중 가우시안 정규성 충족| E[RobustScaler 적용]
+    end
+
+    %% 모델링 및 파인튜닝 단계
+    subgraph ML_Engine [GMM Clustering Engine]
+        E --> F[AIC/BIC Hyperparameter Tuning]
+        F -->|최적 엘보우 포인트 K 자동 산출| G[Gaussian Mixture Model Fit]
+        G -->|타원형 공분산 구조 적용| H[User Cluster Labeling]
+    end
+
+    %% 데이터 활용 및 서빙 단계
+    subgraph Downstream [CRM & Activation]
+        H --> I[MECE Waterfall 조건문 기반 자동 네이밍]
+        I --> J[CSV Snapshot Export to AWS S3]
+        J -->|Sync| K[Braze CRM Tool]
+        K -->|Targeting Action| L[VIP 이탈률 5% 감소 달성]
+    end
+
+    %% 스타일 세팅
+    style Storage fill:#f9f,stroke:#333,stroke-width:2px
+    style Preprocessing fill:#bbf,stroke:#333,stroke-width:2px
+    style ML_Engine fill:#ff9,stroke:#333,stroke-width:2px
+    style Downstream fill:#bfb,stroke:#333,stroke-width:2px
+    
+---
+
+## 💡 Business Background & Problem Solving (비즈니스 배경 및 문제 해결의 고민)
+
+기술(Tech)을 적용하기에 앞서, **'왜 이 프로젝트가 필요한가?'** 그리고 **'수많은 모델 중 왜 이 방법이 최선인가?'** 에 대한 고민을 바탕으로 파이프라인을 설계했습니다.
+
+### 1. 프로젝트 추진 배경: "매출 견인 유저의 이탈 방지와 선제적 케어"
+- **핵심 유저 이탈 리스크 방어:** 매년 회사 매출의 견고한 축을 담당하는 상위 유저들이 N%씩 이탈하는 비즈니스적 손실이 발생하고 있었습니다. 꾸준한 고매출을 주는 핵심 고객층의 이탈은 전사 성장에 치명적인 리스크였습니다.
+- **VoC 급증에 대한 정량적 대응:** 특히 해당 이탈 유저 그룹을 중심으로 세탁 품질 및 서비스에 대한 VoC(고객의 소리)가 유의미하게 증가하고 있음을 포착했습니다. 사후 약방문식 대응이 아닌, 이탈 징후를 사전에 포착하고 선제적으로 케어할 수 있는 데이터 기반의 정밀 고객 관리가 절실했습니다.
+
+### 2. 고객 세그멘테이션 모델 선정 과정: "직관적 마케팅의 시스템화와 모델 벤치마킹"
+기존에는 전사적으로 통일된 고객 세그먼트 기준이 부재하여 단순 매출 기준 컷오프(Top N명 지정) 방식에 의존하거나, 현장의 직관적인 마케팅에 머물러 있었습니다. *(예: 비가 오면 생활빨래 쿠폰 발송, 날이 추워지면 패딩 쿠폰 발송 등)*
+이러한 직관적 액션을 시스템화하여 **"쿠폰 고관여 체리피커 유저", "주기적으로 이용하나 앱 접속 후 세탁을 맡기지 않는 이탈 위험 유저"** 등으로 구체화하기 위해 13개 행동 피처를 기반으로 모델 벤치마킹을 수행했습니다.
+
+* **K-Means를 배제한 이유:** K-Means는 군집의 형태를 모든 거리가 일정한 'N차원의 구 형태(Circle)'로만 강제하는 한계가 있습니다. 행동 피처가 13개인 다차원 상황에서 극단적인 아웃라이어가 존재할 경우, 전체적인 분류 정확도가 크게 저하되는 문제가 있었습니다.
+* **HDBSCAN을 배제한 이유:** 밀도 기반 모델인 HDBSCAN은 특정 행동 피처들이 극단적으로 치우친(Skewed) 환경에서 치명적인 결함을 보였습니다. 실제 클러스터링 실험 결과 **전체 유저의 70%가 노이즈(Noise, Label -1)로 판단**되었으며, 특히 우리가 가장 집중 케어해야 하는 매출 최상위 VVIP 유저들이 듬성듬성 퍼져있다는 이유로 대거 유실되는 현상이 발생하여 CRM 목적과 정면 충돌했습니다.
+* **최종 선택 (GMM, Gaussian Mixture Model):** 각 군집이 고유한 평균과 분산을 바탕으로 유연한 **'타원형(Elliptical)'** 공분산 구조를 가질 수 있어, 넓게 퍼진 VVIP 아웃라이어 데이터까지 노이즈 처리 없이 최대한 포용할 수 있는 방법이었습니다.
+
+### 3. 프로젝트 성과 (Impact)
+데이터 기반의 정교한 고객 세그멘테이션을 통해 실질적인 고객 리텐션 개선과 마케팅 자동화를 달성했습니다.
+- **VIP 유저 이탈률 감소:** 데이터 기반의 선제적인 타겟팅 및 케어 캠페인을 통해, **작년 4분기 대비 올해 1분기 VIP 이탈률을 5% 낮추는 데 성공**했습니다.
+- **Braze (CRM 툴) 연동 및 타겟팅 자동화:** 도출된 고객 클러스터 데이터를 사내 CRM 마케팅 툴(Braze)과 직접 연동하여, 마케터가 Push/LMS 캠페인 진행 시 별도의 데이터 추출 없이 유저 군집을 즉각적으로 타겟팅할 수 있는 고도화된 환경을 구축했습니다.
+
+---
+
+## 🏗️ Architecture & Workflow (기술 워크플로우)
+
+1. **Data Extraction (데이터 수집)**
+   - **Snowflake:** 사내 데이터 웨어하우스에서 13개 행동 피처 및 RFM 데이터 집계 후 파이썬 환경으로 로드.
+   - **AWS Secrets Manager:** DB 자격 증명 및 민감 정보를 안전하게 복호화하여 로드.
+2. **Feature Engineering & Normalization (전처리 및 정규화)**
+   - 극단적인 이상치(Outlier)의 스케일 영향을 최소화하기 위해 중앙값과 IQR을 사용하는 **`RobustScaler`** 적용.
+   - GMM 모델의 '각 군집은 정규분포를 따른다'는 수학적 가정을 만족시키기 위해, 비대칭 피처에 **`np.log1p` 및 `np.sqrt` 변환**으로 어느정도의 정규성(Normality) 확보.
+3. **ML Fine Tuning & Modeling (최적 K 탐색 및 군집화)**
+   - 배치가 구동될 때마다 유저 분포 변화에 유연하게 대응하도록, **AIC 지표의 2차 차분(기울기 변화량)을 계산해 가장 격하게 꺾이는 최적의 군집 수(K, 엘보우 포인트)를 10~25 사이에서 자동 탐색**하는 로직 구현.
+   - 파인튜닝된 파라미터와 최적의 K값으로 GMM 모델을 적합하여 군집 레이블 도출.
+4. **Deploy & Automation (배포 및 자동화)**
+   - 전체 파이프라인 코드를 Docker 컨테이너 이미지로 빌드하여 AWS ECR에 푸시 후, **AWS Lambda + EventBridge**를 연동해 매월 초 배치 실행.
+5. **Integration (서버 및 CRM 연동)**
+   - 자동 분류 및 매핑된 유저별 군집 결과는 CSV 형태의 데이터 스냅샷으로 **AWS S3 버킷**에 적재.
+   - DB 서버에서 해당 S3 오브젝트를 직접 Fetch하여 타겟 마케팅에 즉각 활용할 수 있는 시스템 구축(서버 개발자의 도움을 받음).
+
+## 🛠️ Tech Stack
+- **Language:** Python 3.11
+- **Machine Learning:** Scikit-learn (GaussianMixture, RobustScaler), Pandas, Numpy, Scipy (stats)
+- **Data Warehouse:** Snowflake
+- **Cloud Infrastructure:** AWS Lambda, AWS S3, AWS ECR, AWS Secrets Manager, EventBridge
+- **Containerization:** Docker
+
+---
+
+## 🔥 Engineering & ML Troubleshooting (엔지니어링 & 모델 트러블슈팅)
+
+### 1. 극단적 비대칭(Right-Skewed) 분포로 인한 전통 모델의 붕괴와 정규성 검증
+- **Issue:** 세탁 비즈니스의 결제 금액과 이용 횟수는 0 부근에 대다수의 일반 고객이 밀집해 있고, 소수의 VVIP 유저가 우측으로 극단적인 롱테일(Long-tail)을 그리는 비대칭 구조를 가집니다. 이로 인해 K-Means는 구형 구조의 한계로 오작동하고, HDBSCAN은 VVIP를 70% 이상 노이즈로 인식해 버리는 문제가 있었습니다. GMM은 타원형 군집으로 추론하여 K-Means보다 유동적이지만, 정규분포를 따라야 한다는 가정이 필요했습니다.
+- **Resolution (수학적 가정 충족 및 시각적 입증):** 전처리 파이프라인 과정에서 특정 컬럼을 `np.log1p` 및 `np.sqrt` 변환하여 우측 꼬리를 압축함으로써 데이터를 GMM 형태로 유도했습니다. 실험 결과, 롱테일 분포가 어느정도 다중 정규분포 형태로 치환되었으며, Q-Q Plot으로도 정규성 충족을 시각적·수학적으로 증명하여 GMM 모델의 당위성을 확보했습니다.
+
+### 2. 매월 가변적인 K값으로 인한 데이터베이스 적재 정합성 리스크
+- **Issue:** 파이프라인 내에 AIC 기반 자동 엘보우 탐색 로직을 구현함에 따라 매월 배치가 돌 때마다 최적의 군집 수($K$)와 군집 Cluster ID가 유동적으로 변할 수 있습니다. 이는 실시간 백엔드 DB 테이블에 유저 히스토리를 적재할 때 컬럼 구조가 뒤틀리거나 과거 데이터와 매핑이 무너지는 데이터 정합성 리스크를 발생시켰습니다.
+- **Resolution (아키텍처 분리 및 스냅샷 관리):** 이름으로 매핑했습니다. 월마다 Cluster 수와 군집의 여부가 고정적이지 않은 상태입니다. 군집 결과를 DB에 매핑할 때는 Cluster의 특성 3가지의 이름으로 매핑하여 관리했습니다.
+
+---
+
+## 🔒 Security
+- 본 레포지토리에 업로드된 파이썬 스크립트(`user_clustering_pipeline.py`) 내의 자동 네이밍 함수(`get_automated_cluster_names`)는 사내 의사결정에 필요한 CRM 타겟팅 핵심 로직 및 주요 비즈니스 조건문을 포함하고 있습니다.
+- 따라서 해당 비즈니스 로직 조건부 영역은 **사내 보안 및 거버넌스 규정에 따라 코드를 생략 및 마스킹 처리**하였으며, 그 외 데이터 추출, 수학적 전처리, ML 파인튜닝 파이프라인 구조는 운영 환경과 동일하게 퍼블릭으로 공개되어 있습니다.
+
+
+
