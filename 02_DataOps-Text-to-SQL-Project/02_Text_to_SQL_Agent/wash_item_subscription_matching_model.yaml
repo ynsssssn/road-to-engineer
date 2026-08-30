@@ -1,0 +1,134 @@
+# =============================================================================
+# [SECURITY NOTICE]
+# 본 명세서는 자유/구독 요금제가 혼재된 서비스 구조에서, 세탁 품목과 구독 요금제의
+# 세탁권 단가를 자동으로 매칭시켜 AI가 정확한 매출/수량을 계산하도록 유도하기 위해
+# 추상화된 세만틱 모델 예시입니다.
+# =============================================================================
+
+name: WASH_ITEM_SUBSCRIPTION_MATCHING_MODEL
+description: >
+  자유이용/구독요금제 2가지 결제 구조가 혼재된 세탁 서비스의 특성상, 세탁 품목과
+  결제 건이 1:1로 매칭되지 않습니다. 구독 요금제는 월마다 N개의 세탁권을 선불로
+  구매한 뒤 세탁 품목에 따라 차감되는 구조이므로, 실제 품목당 단가를 계산하려면
+  요금제 세부 구성(laundry_plan_item)과 실제 세탁 품목(wash_item)을 반드시
+  SUBTRACT_CATEGORY 기준으로 JOIN해야 합니다. 이 매칭 로직은 사내에 별도로
+  문서화되어 있지 않아 사전 정의 없이는 AI도 추론할 수 없는 영역이므로, 이 모델을
+  통해 명시적으로 규칙을 제공합니다.
+
+tables:
+  # ---------------------------------------------------------------------------
+  # 1. 요금제별 세탁권 단가 요약 테이블 (AI를 위한 논리적 집계 뷰)
+  # (실제 쿼리의 category_base + laundry_plan_item_summary 역할)
+  # ---------------------------------------------------------------------------
+  - name: PLAN_ITEM_SUMMARY
+    description: >
+      구독 요금제(Laundry Plan)의 세탁권/품목별 차감 단가(Discount Unit Price)가
+      계산된 요약 테이블입니다. 요금제 하나에 여러 대분류(생활빨래/개별클리닝/
+      와이셔츠/이불/세탁권)가 섞여 있을 수 있으나, 실제로는 그중 값이 0이 아닌
+      한 카테고리만 대표 차감 카테고리(SUBTRACT_CATEGORY)로 결정됩니다.
+    base_table:
+      database: "[MASKED_DB]"
+      schema: PUBLIC
+      table: VIEW_PLAN_ITEM_SUMMARY  # 복잡한 CTE(category_base)를 View로 만들어 AI에게 제공
+    dimensions:
+      - name: LAUNDRY_PLAN_ID
+        description: "구독 요금제의 고유 ID"
+        expr: LAUNDRY_PLAN_ID
+        data_type: NUMBER(38,0)
+      - name: PLAN_NAME
+        description: "구독 요금제 이름"
+        expr: NAME
+        data_type: VARCHAR
+      - name: SUBTRACT_CATEGORY
+        description: >
+          이 요금제에서 세탁권이 차감되는 대표 카테고리.
+          laundry_count(생활빨래) / shirt_count(와이셔츠) / cleaning_count(개별클리닝) /
+          bedding_count(이불) / launX_count(세탁권) 중 하나. 우선순위는 이 순서를 따름.
+        expr: SUBTRACT_CATEGORY
+        data_type: VARCHAR
+    measures:
+      - name: DISCOUNT_UNIT_PRICE
+        description: >
+          해당 카테고리 1개당 할인 적용 차감 단가. 단, 원가 대비 50% 미만으로 할인된
+          경우 원가와 할인가의 차액을 단가로 대체 계산하는 예외 로직이 적용되어 있음
+          (프로모션성 초저가 요금제의 단가 왜곡 방지 목적).
+        expr: DISCOUNT_UNIT_PRICE
+        data_type: FLOAT
+      - name: DELIVERY_TIMES
+        description: "월 배송 횟수"
+        expr: DELIVERY_TIMES
+        data_type: NUMBER(38,0)
+
+  # ---------------------------------------------------------------------------
+  # 2. 개별 세탁 품목 상세 테이블 (실제 세탁 발생 내역)
+  # (실제 쿼리의 wash_info 역할 — wash + laundrygo_receipt_order(_item) 조인 결과)
+  # ---------------------------------------------------------------------------
+  - name: WASH_ITEM_DETAIL
+    description: >
+      고객이 실제로 세탁을 맡긴 품목별 상세 내역입니다. 자유이용 건은 SUBTRACT_TYPE이
+      없고 즉시 결제되지만, 구독 요금제 건은 SUBTRACT_TYPE='SUBTRACT'일 때만 세탁권이
+      실제로 차감된 것으로 간주해야 합니다. 정상 건만 집계하려면 반드시
+      STATUS NOT IN (4, 17) 필터와 laundry24_pgi IS NULL 조건을 함께 적용해야 합니다.
+    base_table:
+      database: "[MASKED_DB]"
+      schema: PUBLIC
+      table: WASH_ITEM_DETAIL
+    dimensions:
+      - name: LAUNDRY_PLAN_ID
+        description: "해당 세탁 건에 적용된 구독 요금제 ID (자유이용인 경우 NULL)"
+        expr: LAUNDRY_PLAN_ID
+        data_type: NUMBER(38,0)
+      - name: LSF_CATEGORY_NAME
+        description: "세탁 품목명 원본 (예: 와이셔츠, 구스이불, 쇼파커버 등 세부 명칭)"
+        expr: LSF_CATEGORY_NAME
+        data_type: VARCHAR
+      - name: SUBTRACT_CATEGORY
+        description: >
+          LSF_CATEGORY_NAME을 대분류로 매핑한 값. 이불류 세부 품목(구스이불, 극세사
+          이불, 쇼파커버 등 30여 종)은 bedding_count로, 셔츠류는 shirt_count로,
+          생활빨래는 laundry_count로, 그 외 전부는 cleaning_count로 귀속됩니다.
+        expr: SUBTRACT_CATEGORY
+        data_type: VARCHAR
+      - name: FACTORY_SEGMENTATION
+        description: "처리 공장 구분 (강서/성수/군포/부산공장)"
+        expr: FACTORY_SEGMENTATION
+        data_type: VARCHAR
+    measures:
+      - name: ITEM_QUANTITY
+        description: "품목 수량"
+        expr: ITEM_QUANTITY
+        data_type: NUMBER(38,0)
+      - name: ITEM_SUBTRACT_COUNT
+        description: >
+          실제로 세탁권이 차감된 수량. ITEM_SUBTRACT_TYPE='SUBTRACT'인 경우에만
+          ITEM_QUANTITY 값을 그대로 사용하고, 그 외(자유이용 등)는 0으로 처리됨.
+        expr: ITEM_SUBTRACT_COUNT
+        data_type: NUMBER(38,0)
+    time_dimensions:
+      - name: CREATED_DATE
+        description: "수거 신청 생성 일자"
+        expr: CREATED_DATE
+        data_type: DATE
+    facts:
+      - name: valid_wash_filter
+        description: "취소/미수거/부속품 건을 제외하는 필수 필터"
+        expr: "STATUS NOT IN (4, 17) AND LAUNDRY24_PGI IS NULL AND LSF_CATEGORY_NAME != '세탁불가 부속품'"
+        labels:
+          - filter
+
+# ---------------------------------------------------------------------------
+# [RELATIONSHIPS] AI가 요금제별 세탁권 단가를 스스로 찾아 매칭하도록 명시
+# 핵심: WASH_ITEM_DETAIL과 PLAN_ITEM_SUMMARY는 LAUNDRY_PLAN_ID뿐 아니라
+# SUBTRACT_CATEGORY까지 함께 일치해야 정확한 단가가 매칭됨 (복합키 조인)
+# ---------------------------------------------------------------------------
+relationships:
+  - name: WASH_ITEM_TO_PLAN_SUMMARY
+    left_table: WASH_ITEM_DETAIL
+    right_table: PLAN_ITEM_SUMMARY
+    relationship_columns:
+      - left_column: LAUNDRY_PLAN_ID
+        right_column: LAUNDRY_PLAN_ID
+      - left_column: SUBTRACT_CATEGORY
+        right_column: SUBTRACT_CATEGORY
+    relationship_type: many_to_one
+    join_type: left

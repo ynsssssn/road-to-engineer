@@ -8,4 +8,4 @@ __pycache__/
 # 비밀키 및 환경변수 파일
 .env
 *.pem
-secrets.json
+secrets.json.DS_Store
