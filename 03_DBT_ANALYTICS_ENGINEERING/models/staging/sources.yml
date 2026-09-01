@@ -12,11 +12,28 @@ sources:
           freshness:
             warn_after: { count: 24, period: hour }
             error_after: { count: 48, period: hour }
-      - name: wash
+      - name: cmc_product_order
+      - name: cmc_product_order_items
+      - name: dw_wash_item_detail_mart
+      - name: laundrygo_coupon_promotion
+      - name: laundrygo_point
+      - name: laundrygo_point_log
       - name: laundrygo_receipt_order
       - name: laundrygo_receipt_order_item
+      - name: laundry_category
+      - name: laundry_plan
+      - name: lsf_factory_info
+      - name: marketing_monthly_retention
+      - name: marketing_monthly_retention_policy
+      - name: provision_type
+      - name: statistics_laundry_plan
       - name: subscription
       - name: subscription_order
       - name: user
-      - name: laundry_plan
-      # ... 나머지 소스 테이블 (총 26개 실사용 테이블 중 일부만 예시로 표기)
+      - name: user_laundrygo_coupon_promotion
+      - name: wash
+      - name: wash_item
+      - name: aws_resource
+      - name: ai_laundry_calculation_image
+      - name: ai_laundry_calculation_item
+      - name: ai_laundry_calculation
