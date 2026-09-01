@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_subscription_payment
+    description: >
+      구독 결제 원장. 순 결제액 = PAYMENT_TYPE=0(결제) 금액에서
+      PAYMENT_TYPE IN(1,2)(취소) 금액을 차감하여 계산.
+      취소 건의 PARENT_PAYMENT_ID는 원 결제 건을 가리키되,
+      원 결제 건 자체는 NULL이 아닌 0으로 저장되는 데이터 관행이 있어
+      후속 모델에서 NULLIF 처리가 필요함 (아래 fct 모델 참고).
+    columns:
+      - name: payment_id
+        description: "결제 레코드 고유 ID"
+        tests:
+          - unique
+          - not_null
+
+      - name: payment_type
+        description: "0: 결제, 1/2: 취소"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2]
+
+      - name: user_id
+        description: "결제한 유저 ID"
+        tests:
+          - not_null
+          - relationships:
+              # 탈퇴 유저의 과거 결제 이력 등 소수 예외가 확인되어 severity를 warn으로 조정
+              config:
+                severity: warn
+              arguments:
+                to: source('laundrygo_live', 'user')
+                field: id
+
+      - name: wash_id
+        description: "연결된 세탁 신청 ID"
+        tests:
+          - relationships:
+              arguments:
+                to: source('laundrygo_live', 'wash')
+                field: id

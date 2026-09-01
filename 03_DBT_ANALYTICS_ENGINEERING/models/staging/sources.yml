@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: laundrygo_live
+    database: LAUNDRYGO_LIVE
+    schema: PUBLIC
+    tables:
+      - name: subscription_payment
+        config:
+          # 결제 데이터는 지연 시 지표 회의에 직접 영향을 주므로 freshness 체크 대상으로 지정
+          loaded_at_field: created_at
+          freshness:
+            warn_after: { count: 24, period: hour }
+            error_after: { count: 48, period: hour }
+      - name: wash
+      - name: laundrygo_receipt_order
+      - name: laundrygo_receipt_order_item
+      - name: subscription
+      - name: subscription_order
+      - name: user
+      - name: laundry_plan
+      # ... 나머지 소스 테이블 (총 26개 실사용 테이블 중 일부만 예시로 표기)
