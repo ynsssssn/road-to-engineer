@@ -7,7 +7,6 @@ sources:
     tables:
       - name: subscription_payment
         config:
-          # 결제 데이터는 지연 시 지표 회의에 직접 영향을 주므로 freshness 체크 대상으로 지정
           loaded_at_field: created_at
           freshness:
             warn_after: { count: 24, period: hour }

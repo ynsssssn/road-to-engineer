@@ -145,7 +145,7 @@ def check_data_quality(target, df):
 - **문제**: Slack App 생성 후 Incoming Webhook을 추가하려 하자 "Request to Add New Webhook" 문구와 함께 관리자 승인 절차가 요구됨
 - **해결**: 워크스페이스 관리자에게 승인 요청 후 정상 발급. 이후 Webhook URL은 코드에 하드코딩하지 않고 AWS Secrets Manager에 등록해 관리
 
-### 2. 컨테이너 기반 Lambda의 진입점(Entrypoint) 불일치
+### 2. 컨테이너 기반 Lambda의 진입점 불일치
 - **문제**: Dockerfile의 `CMD`를 새 파일명에 맞게 수정했음에도 `Runtime.InvalidEntrypoint` 에러가 반복 발생
 - **원인 규명**: `docker inspect`로 이미지의 실제 `Cmd` 값을 확인한 결과, `--no-cache` 없이 빌드해 Docker가 이전 레이어(예전 CMD)를 그대로 재사용하고 있었음을 확인
 - **해결**: `--platform linux/amd64 --provenance=false --no-cache` 옵션을 포함해 재빌드, `docker inspect`로 실제 반영 여부를 매번 검증하는 절차를 확립
