@@ -1,4 +1,4 @@
-# 🛠️ road-to-engineer
+# 🛠️ Portpolio
 
 Data Analyst로 커리어를 시작해, 파이프라인 자동화·MLOps·Analytics Engineering으로
 영역을 넓혀온 과정을 기록한 리포지토리입니다. "숫자를 분석하는 일"에서 "숫자가
