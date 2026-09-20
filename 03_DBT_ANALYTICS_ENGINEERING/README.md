@@ -1,9 +1,8 @@
 # 🧱 dbt 기반 Analytics Engineering 파이프라인 구축
 
-실제 운영 중인 세탁 서비스(LAUNDRYGO) 데이터를 대상으로, 기존 SQL 문서 기반 거버넌스를
-**코드로 강제되는 검증 체계**로 전환한 프로젝트입니다. dbt를 도입해
-세탁·결제·주문 3개 도메인의 staging-mart 파이프라인을 구축하고, 그 과정에서 실제
-데이터 정합성 이슈를 발견·해결했습니다.
+실제 운영 중인 세탁 서비스 데이터를 대상으로, 기존 SQL 문서 기반 거버넌스를 코드로
+강제되는 검증 체계로 전환한 프로젝트입니다. dbt를 도입해 세탁·결제·주문 3개 도메인의
+staging-mart 파이프라인을 구축하고, 그 과정에서 실제 데이터 정합성 이슈를 발견·해결했습니다.
 
 ---
 
@@ -11,24 +10,20 @@
 
 이 프로젝트를 처음부터 "dbt를 도입해야겠다"는 확신으로 시작한 건 아니었습니다.
 
-사내 유일한 데이터 담당자로서, Snowflake Cortex Analyst용 시맨틱 모델(YAML)을 직접 만들어
-Text-to-SQL 환경을 구축했고, 신규 입사자가 오면 이 YAML을 각자 쓰는 LLM 에이전트(Claude,
-ChatGPT 등)에 넣어서 스키마를 파악하도록 안내해왔습니다. 처음엔 잘 작동했지만, 시간이
-지날수록 두 가지 불편함이 누적됐습니다.
+사내 유일한 데이터 담당자로서, Snowflake Cortex Analyst용 시맨틱 모델(YAML)을
+직접 만들어 Text-to-SQL 환경을 구축했고, 신규 입사자가 오면 이 YAML을 각자 쓰는
+LLM 에이전트(Claude, ChatGPT 등)에 넣어서 스키마를 파악하도록 안내해왔습니다.
+처음엔 잘 작동했지만, 시간이 지날수록 두 가지 불편함이 누적됐습니다.
 
-1. **매번 손으로 갱신해야 했습니다.** 프로모션이 새로 생기거나 앱이 개편되면서 테이블이
-   추가·변경될 때마다, 그 YAML을 수동으로 다시 고쳐서 배포해야 했습니다. 이건 반복 작업일
-   뿐 엔지니어링이 아니라는 생각이 계속 들었습니다.
-2. **명세서가 실제와 맞는지 검증할 방법이 없었습니다.** YAML에 "이 테이블은 A와 B가 이런
-   관계다"라고 적어놨지만, 실제 테이블 사이에는 물리적인 관계(FK 등)만 존재할 뿐, 그 문서가
-   맞는 설명인지 확인해주는 장치가 없었습니다. 문서가 틀려도 아무도 모르는 구조였습니다.
+- **매번 손으로 갱신해야 했습니다.** 프로모션이 새로 생기거나 앱이 개편되면서 테이블이 추가·변경될 때마다, 그 YAML을 수동으로 다시 고쳐서 배포해야 했습니다. 이건 반복 작업일 뿐 엔지니어링이 아니라는 생각이 계속 들었습니다.
+- **명세서가 실제와 맞는지 검증할 방법이 없었습니다.** YAML에 "이 테이블은 A와 B가 이런 관계다"라고 적어놨지만, 실제 테이블 사이에는 물리적인 관계(FK 등)만 존재할 뿐, 그 문서가 맞는 설명인지 확인해주는 장치가 없었습니다. 문서가 틀려도 아무도 모르는 구조였습니다.
 
 이 문제를 어떻게 풀어야 할지 고민하던 중, 데이터 엔지니어 채용 공고들을 살펴보다가
-공통적으로 dbt가 언급되는 걸 발견했습니다. 처음엔 "이게 뭔데 다들 쓰지?" 싶어서 조금씩
-공부를 시작했고, 알아갈수록 제가 겪던 문제(매번 수동 갱신, 검증 불가)를 정확히 겨냥한
-도구라는 걸 알게 됐습니다. dbt는 스키마 설명(YAML)이 실제 SQL 모델과 코드로 직접 연결돼
-있어서, 모델이 바뀌면 문서도 같이 재생성해야 하는 게 구조적으로 드러나고, `test`로 관계가
-실제로 맞는지 자동 검증까지 가능했습니다.
+공통적으로 dbt가 언급되는 걸 발견했습니다. 처음엔 "이게 뭔데 다들 쓰지?" 싶어서
+조금씩 공부를 시작했고, 알아갈수록 제가 겪던 문제(매번 수동 갱신, 검증 불가)를
+정확히 겨냥한 도구라는 걸 알게 됐습니다. dbt는 스키마 설명(YAML)이 실제 SQL
+모델과 코드로 직접 연결돼 있어서, 모델이 바뀌면 문서도 같이 재생성해야 하는 게
+구조적으로 드러나고, test로 관계가 실제로 맞는지 자동 검증까지 가능했습니다.
 
 그래서 처음부터 제가 낸 아이디어는 아니었지만, "이거 우리 상황에 적용해보면 되겠다"는
 판단으로 직접 실습해본 프로젝트입니다. 그리고 실제로 해보니, 단순히 문법을 익히는 데서
@@ -37,10 +32,11 @@ ChatGPT 등)에 넣어서 스키마를 파악하도록 안내해왔습니다. �
 
 돌아보면 흥미로운 지점이 하나 있습니다. 순 결제액이 마이너스가 되는 51,688건은, 사실
 그동안 분석 업무를 하면서 한 번도 눈에 띈 적 없는 문제였습니다. 평소에는
-`PAYMENT_TYPE=0`(실제 결제)만 보고 매출을 집계했을 뿐, 결제와 취소를 원 건 단위로 합쳐서
-순액을 계산해본 적 자체가 없었기 때문입니다. dbt로 이 계산을 모델로 만들고 테스트를
-걸어보고 나서야 이런 이상 케이스가 존재한다는 걸 처음 알게 됐고, 이후로는 다른 테이블도
-"내가 안 보던 각도에서 보면 어떤 문제가 숨어있을까"를 습관적으로 의심하게 됐습니다.
+`PAYMENT_TYPE=0`(실제 결제)만 보고 매출을 집계했을 뿐, 결제와 취소를 원 건 단위로
+합쳐서 순액을 계산해본 적 자체가 없었기 때문입니다. dbt로 이 계산을 모델로 만들고
+테스트를 걸어보고 나서야 이런 이상 케이스가 존재한다는 걸 처음 알게 됐고, 이후로는
+다른 테이블도 "내가 안 보던 각도에서 보면 어떤 문제가 숨어있을까"를 습관적으로
+의심하게 됐습니다.
 
 ---
 
@@ -53,10 +49,10 @@ ChatGPT 등)에 넣어서 스키마를 파악하도록 안내해왔습니다. �
 
 ### 2. 왜 dbt였나 — 대안과의 비교
 
-솔직히 말하면, dbt를 고른 첫 계기는 순수한 기술적 판단이라기보다 "채용 공고에 제일 많이
-보이는 도구였다"는 경로의존적인 이유가 컸습니다. 다만 실제로 검토해보니, 겪고 있던
-문제(YAML 수동 갱신, 로직 중복, 검증 불가) 상황에서 다른 대안들과 비교해도 합리적인
-선택이었습니다.
+솔직히 말하면, dbt를 고른 첫 계기는 순수한 기술적 판단이라기보다 "채용 공고에 제일
+많이 보이는 도구였다"는 경로의존적인 이유가 컸습니다. 다만 실제로 검토해보니, 겪고
+있던 문제(YAML 수동 갱신, 로직 중복, 검증 불가) 상황에서 다른 대안들과 비교해도
+합리적인 선택이었습니다.
 
 | 대안 | 특징 | 이번 상황에서 채택하지 않은/보류한 이유 |
 |---|---|---|
@@ -85,69 +81,15 @@ ChatGPT 등)에 넣어서 스키마를 파악하도록 안내해왔습니다. �
 ## 🏗️ 아키텍처
 
 ```mermaid
-graph TD
-    subgraph "Sources (26개 실사용 테이블)"
-        S1[(wash)]
-        S2[(subscription_payment)]
-        S3[(laundrygo_receipt_order)]
-        S4[(laundrygo_receipt_order_item)]
-    end
+graph LR
+    A[(원본 소스 테이블)] --> B[staging 모델]
+    B --> C[mart 모델]
+    C --> D{dbt test}
+    D -->|PASS| E[운영 지표/대시보드]
+    D -->|FAIL| F[원인 추적 및 수정]
+    F --> B
 
-    subgraph "Staging Layer"
-        ST1[stg_wash]
-        ST2[stg_subscription_payment]
-        ST3[stg_laundrygo_receipt_order]
-        ST4[stg_laundrygo_receipt_order_item]
-    end
-
-    subgraph "Macro (재사용 비즈니스 룰)"
-        M1{{valid_wash_filter}}
-        M2{{net_payment_filter}}
-        M3{{cancelled_payment_filter}}
-    end
-
-    subgraph "Mart Layer"
-        MT1[wash_daily_incremental]
-        MT2[fct_subscription_net_payment]
-        MT3[fct_user_wash_payment]
-        MT4[fct_receipt_order_summary]
-    end
-
-    subgraph "Data Quality"
-        T1[/generic tests: unique, not_null, accepted_values, relationships/]
-        T2[/singular test: assert_net_payment_not_negative/]
-        T3[/singular test: assert_item_count_breakdown_valid/]
-        F1[/source freshness: 24h warn / 48h error/]
-    end
-
-    S1 --> ST1
-    S2 --> ST2
-    S3 --> ST3
-    S4 --> ST4
-
-    M1 -.적용.-> ST1
-    M2 -.적용.-> MT2
-    M2 -.적용.-> MT3
-    M3 -.적용.-> MT2
-    M3 -.적용.-> MT3
-
-    ST1 --> MT1
-    MT1 --> MT3
-    ST2 --> MT2
-    ST2 --> MT3
-    ST3 --> MT4
-    ST4 --> MT4
-
-    MT2 --> T2
-    MT4 --> T3
-    ST1 --> T1
-    ST2 --> T1
-    S2 --> F1
-
-    style Sources fill:#f9f,stroke:#333,stroke-width:2px
-    style Staging_Layer fill:#bbf,stroke:#333,stroke-width:2px
-    style Mart_Layer fill:#bfb,stroke:#333,stroke-width:2px
-    style Data_Quality fill:#fbb,stroke:#333,stroke-width:2px
+    style D fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
 ---
@@ -163,12 +105,15 @@ graph TD
 |---|---|---|---|
 | 발견 | 초기 singular test 실행 | 51,688건 | - |
 | 1차 수정 | 원 결제-취소를 `parent_payment_id` 기준으로 재집계 (날짜 기준 집계 오류 수정) | 8,641건 | 83.3% ↓ |
-| 2차 수정 | `parent_payment_id`가 `null`이 아닌 `0`으로 저장되는 데이터 관행 반영 (`nullif` 적용) | 394건 | 95.4% ↓ (누적 99.2% ↓) |
-| 최종 확인 | 잔여 394건이 전부 2019년(추적 컬럼 도입 이전) 데이터임을 규명, 근거와 함께 테스트에 문서화 | 0건 (예외 처리) | **100%** |
+| 2차 수정 | `parent_payment_id`가 null이 아닌 0으로 저장되는 데이터 관행 반영 (`nullif` 적용) | 394건 | 95.4% ↓ (누적 99.2% ↓) |
+| 최종 확인 | 잔여 394건이 전부 2019년(추적 컬럼 도입 이전) 데이터임을 규명, 근거와 함께 테스트에 문서화 | 0건 (예외 처리) | 100% |
 
-> **최종 결과: 51,688건 → 0건, 99.2%는 로직 수정으로, 나머지는 시스템 히스토리 예외로 처리하여 오탐 없는 검증 체계 완성**
+**최종 결과**: 51,688건 → 0건, 99.2%는 로직 수정으로, 나머지는 시스템 히스토리
+예외로 처리하여 오탐 없는 검증 체계 완성
 
-또한 `relationships` 테스트로 결제-유저 관계 무결성을 검증하는 과정에서 **비정상 케이스 3건**을 추가로 발견했고, 조사 결과 탈퇴 유저의 잔존 결제 이력으로 확인되어 `severity: warn`으로 지속 모니터링 체계에 편입했습니다.
+또한 `relationships` 테스트로 결제-유저 관계 무결성을 검증하는 과정에서 비정상
+케이스 3건을 추가로 발견했고, 조사 결과 탈퇴 유저의 잔존 결제 이력으로 확인되어
+`severity: warn`으로 지속 모니터링 체계에 편입했습니다.
 
 ### 2. Incremental Model 성능
 
@@ -179,7 +124,8 @@ graph TD
 | 최초 실행 | 전체 로드 | 6,495,664건 |
 | 2차 실행 (즉시 재실행) | 증분 로드 (신규 데이터만) | 0건 |
 
-전체 649만 건을 매번 재계산하지 않고, 실제로 새로 발생한 데이터만 처리하는 구조로 전환하여 반복 실행 시 쿼리 비용과 처리 시간을 대폭 절감했습니다.
+전체 649만 건을 매번 재계산하지 않고, 실제로 새로 발생한 데이터만 처리하는 구조로
+전환하여 반복 실행 시 쿼리 비용과 처리 시간을 대폭 절감했습니다.
 
 ### 3. 자동 검증 커버리지
 
@@ -188,7 +134,7 @@ graph TD
 | Staging 모델 | 4개 |
 | Mart 모델 (incremental 포함) | 4개 |
 | 재사용 macro | 3개 (`valid_wash_filter`, `net_payment_filter`, `cancelled_payment_filter`) |
-| Generic test | 15개 이상 (unique, not_null, accepted_values, relationships) |
+| Generic test | 15개 이상 (`unique`, `not_null`, `accepted_values`, `relationships`) |
 | Singular test (커스텀 검증) | 2개 |
 | Source freshness 모니터링 | 1건 (warn 24h / error 48h) |
 
@@ -201,7 +147,7 @@ graph TD
 - **원인 규명 과정**:
   1. 상위 5건을 직접 조회해 패턴 확인 → 결제일과 취소일이 다른 날짜에 발생하는 케이스가 다수 확인됨
   2. `parent_payment_id`(취소→원결제 추적 키)로 재집계 로직 변경 → 오류 건수 83% 감소
-  3. 여전히 남은 케이스를 재조사한 결과, 원 결제 건의 `parent_payment_id`가 `null`이 아닌 `0`으로 저장되는 데이터 관행을 발견 → `coalesce(nullif(parent_payment_id, 0), payment_id)`로 수정하여 추가 95% 감소
+  3. 여전히 남은 케이스를 재조사한 결과, 원 결제 건의 `parent_payment_id`가 null이 아닌 0으로 저장되는 데이터 관행을 발견 → `coalesce(nullif(parent_payment_id, 0), payment_id)`로 수정하여 추가 95% 감소
   4. 최종 잔여 394건을 연도별로 집계한 결과 100%가 2019년 데이터로, `parent_payment_id` 체계 도입 이전 시스템 히스토리임을 확인
 - **해결**: 로직 자체를 정교화하는 동시에, 재현 불가능한 예외는 테스트 조건에 날짜 범위와 근거 주석으로 명시하여 향후 오탐 없이 유지보수 가능하도록 문서화
 
@@ -225,13 +171,13 @@ graph TD
 ## 📁 프로젝트 구조
 
 ```
-laundrygo_dw/
+laundry_dw/
 ├── models/
 │   ├── staging/
 │   │   ├── stg_wash.sql (.yml)
 │   │   ├── stg_subscription_payment.sql (.yml)
-│   │   ├── stg_laundrygo_receipt_order.sql
-│   │   ├── stg_laundrygo_receipt_order_item.sql
+│   │   ├── stg_receipt_order.sql
+│   │   ├── stg_receipt_order_item.sql
 │   │   └── sources.yml
 │   └── marts/
 │       ├── wash_daily_incremental.sql

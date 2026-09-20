@@ -19,7 +19,7 @@
 
 ## 💡 프로젝트 배경 및 성과
 
-**"아날로그(교육) ➔ 프로세스(가이드) ➔ AI 자동화(Text-to-SQL)"** 3단계 빌드업을 통해
+"아날로그(교육) ➔ 프로세스(가이드) ➔ AI 자동화(Text-to-SQL)" 3단계 빌드업을 통해
 구성원 스스로 데이터를 분석하는 Self-Serve Analytics 환경을 구축했습니다.
 
 ### 1. 해결하고자 한 문제
@@ -40,7 +40,7 @@
 
 ### 2-1. 왜 Snowflake Intelligence였나
 
-**실제로 먼저 시도했던 방법은 자체 벡터DB 구축**이었습니다. 기존 쿼리들을 모아 벡터DB에
+실제로 먼저 시도했던 방법은 자체 벡터DB 구축이었습니다. 기존 쿼리들을 모아 벡터DB에
 넣어보려 했지만, 메타데이터 정비와 임베딩 관리를 동시에 수작업으로 진행하려니 속도가
 너무 느렸습니다.
 
@@ -52,6 +52,24 @@
 
 > **한 줄 요약**: 자체 벡터DB는 느려서 막혀 있었는데, 마침 Snowflake Autopilot이 나왔고 이미 Snowflake로 대시보드·Streamlit을 운영 중이라 토큰 여유도 있어 자연스럽게 이걸 택했습니다.
 
+### Phase 4. Claude-Snowflake 직접 연동으로 AI 채널 통합
+
+Cortex Analyst 기반 Text-to-SQL은 잘 작동했지만, 회사가 전사적으로 유료 결제해
+쓰고 있는 Claude와는 별개의 채널이었습니다. 대화 중 "이 데이터 첨부해줘" 같은
+요청이 오면, Snowflake Cowork에서 데이터를 뽑아 다운받은 뒤 다시 Claude에
+업로드하는 번거로운 과정을 거쳐야 했습니다. 게다가 Snowflake Cowork는 멀티모달에
+약해서, 사진이나 다른 파일을 첨부하면 제대로 읽지 못하는 한계도 있었습니다.
+
+이를 해결하기 위해 Claude에 Snowflake MCP 커넥터를 연동해, Claude와 대화하는
+중에 바로 Snowflake 쿼리를 실행하고 결과를 받아오도록 AI 채널을 하나로
+통합했습니다. 연동 시 Snowflake 역할을 PUBLIC(조회 전용)으로 스코프해, MCP를 통한
+접근은 SELECT만 가능하도록 제한하고 DDL/DML은 ACCOUNTADMIN 역할을 가진 본인만
+수행할 수 있도록 분리했습니다.
+
+기존에는 "Snowflake Cowork에서 뽑기 → 클로드에 넣기"로 나뉘어 있던 흐름이
+Claude 안에서 한 번에 처리되면서, 데이터 조회부터 첨부 파일이 섞인 복합적인 요청까지
+하나의 채널에서 자연스럽게 이어지게 됐습니다.
+
 ### 3. 프로젝트 성과
 
 | 시점 | 단순 데이터 추출 요청 빈도 (평균) |
@@ -62,6 +80,7 @@
 
 - 스터디 참여 인원 12명을 시작으로, 이후 실무자들이 직접 데이터 마트에 접근하고 가공할 수 있는 자생적 데이터 분석 환경이 정착됐습니다.
 - 단순 요청 대응에 쓰이던 시간이 줄면서, 분석가 본연의 고도화 업무에 집중할 수 있는 여력이 확보됐습니다.
+- Claude-Snowflake MCP 연동 이후로는 데이터 조회 자체가 대화형으로 통합되어, 별도 채널을 오가는 과정 자체가 사라졌습니다.
 
 ---
 
@@ -69,14 +88,20 @@
 
 ```mermaid
 graph TD
-    subgraph "Phase 3: Text-to-SQL AI 자동화 구축 (TO-BE)"
+    subgraph "Phase 4: Claude-Snowflake MCP 통합"
+        F[구성원] -->|Claude에서 바로 대화| G{Claude + Snowflake MCP}
+        G -->|SELECT 쿼리 실행, PUBLIC 역할| H[(사내 데이터 웨어하우스)]
+        G -->|첨부 파일 포함 복합 요청 처리| F
+    end
+
+    subgraph "Phase 3: Text-to-SQL AI 자동화 구축"
         C[현업 부서] -->|자연어 질문 입력| D{Snowflake Intelligence}
         D -->|SQL 자동 생성 및 데이터 추출| C
         E[데이터 분석가] -->|Autopilot 기반 YAML 명세서 작성<br/>도메인 룰 및 필터 검증/주입| D
-        D -->|쿼리 실행| F[(사내 데이터 웨어하우스)]
+        D -->|쿼리 실행| H
     end
 
-    subgraph "Phase 1 & 2: 아날로그 교육 및 프로세스화 (AS-IS)"
+    subgraph "Phase 1 & 2: 아날로그 교육 및 프로세스화"
         A[현업 부서] -->|단순 쿼리 요청| B(데이터 분석가 병목 발생)
         B -.->|SQL 스터디 및 템플릿 제공| A
     end
@@ -112,8 +137,8 @@ graph TD
 - **1차 시도**: 기존 쿼리문을 기반으로 벡터DB를 직접 구축해 수동으로 명세를 만들려 했습니다.
 - **전환**: 마침 Snowflake가 DB 히스토리와 주요 쿼리 학습을 지원하는 Autopilot 기능을 출시하면서, 자주 쓰이던 쿼리문을 기반으로 명세서 초안을 자동 생성하는 방식으로 전환했습니다. 이후 테이블 단위로 날짜 기준(KST/UTC), 상태값 필터 등을 사람이 검토·보정하는 하이브리드 방식으로 정착시켰습니다.
 
-### 배포 일정
-- 현재 내부 테스트 진행 중이며, 테스트 케이스를 기반으로 테이블 간 JOIN 관계 및 조건문을 지속적으로 학습·수정하고 있습니다. (완전 배포는 6월 말 목표로 진행)
+### 배포 현황
+- Phase 3(Text-to-SQL)는 실제 운영에 배포되어 사용 중이며, Phase 4(Claude-Snowflake MCP 연동)까지 이어져 AI 채널이 하나로 통합된 상태입니다.
 
 ---
 
@@ -134,4 +159,4 @@ graph TD
 
 ## 🛠️ Tech Stack
 
-`Snowflake Cortex Analyst` `Snowflake Autopilot` `Snowflake Intelligence` `SQL`
+`Snowflake Cortex Analyst` `Snowflake Autopilot` `Snowflake Intelligence` `Claude` `MCP` `SQL`
