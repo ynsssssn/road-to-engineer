@@ -66,11 +66,9 @@ Self-Serve Analytics 환경을 구축했습니다. SQL 스터디부터 Snowflake
 
 ## 🛠️ Tech Stack
 
-<<<<<<< HEAD
 `AWS Lambda` `Docker` `Snowflake` `dbt` `Prophet` `scikit-learn` `Google Apps Script` `Slack API` `Python` `SQL` `PyMySQL` `MCP`
-=======
-`AWS Lambda` `Docker` `Snowflake` `dbt` `Prophet` `scikit-learn` `Google Apps Script` `Slack API` `Python` `SQL` `PyMySQL`
->>>>>>> 0d93ebcb551c218cca4fd87e2123500ce1b6e74a
+
+
 
 ---
 
