@@ -23,11 +23,11 @@ Data Analyst로 커리어를 시작해, 파이프라인 자동화·MLOps·Analyt
 | [01-4. Pipeline Alert Monitoring](./01_MLOPS/01-4_PIPELINE_ALERT_MONITORING) | Slack Webhook, 사전 감지형 DQ 모니터링 |
 | [01-5. Data Retention Compliance](./01_MLOPS/01-5_DATA_RETENTION_COMPLIANCE) | PyMySQL, 개인정보보호, ISMS |
 
-### [02. DataOps & Text-to-SQL](./02_DataOps-Text-to-SQL-Project) — 사내 데이터 리터러시 향상
+### [02. AI 기반 데이터 접근성](./02_AI_DATA_ACCESS) — 교육부터 Text-to-SQL, MCP까지
 1인 분석가 체제의 병목을 해결하기 위해 "교육 → 프로세스 → AI 자동화" 3단계로
 Self-Serve Analytics 환경을 구축했습니다. SQL 스터디부터 Snowflake Intelligence
 기반 Text-to-SQL 에이전트, 그리고 전사에서 쓰는 Claude와 Snowflake를 MCP로 직접
-연동해 AI 채널을 하나로 통합하기까지의 과정을 담았습니다.
+연동해 AI 채널을 하나로 통합하고, Lambda로 MCP 서버를 직접 구현하기까지의 과정을 담았습니다.
 
 ### [03. dbt Analytics Engineering](./03_DBT_ANALYTICS_ENGINEERING) — Semantic Layer 실전 구축
 반복적으로 갱신해야 했던 시맨틱 모델(YAML) 문서를, 코드로 검증 가능한 dbt 파이프라인으로
@@ -51,7 +51,7 @@ Self-Serve Analytics 환경을 구축했습니다. SQL 스터디부터 Snowflake
    다르다는 걸 운영하며 깨달았고, 이를 감지하는 체계가 필요했습니다.
 3. **01-5 Data Retention Compliance**: 여기서 더 나아가, ISMS 인증 심사 대응처럼
    분석·엔지니어링 범위를 넘어서는 DBA·개인정보보호 영역의 문제도 직접 맡아 해결했습니다.
-4. **02 DataOps**: 혼자 감당하기 버거운 데이터 요청 병목을 풀려면, 조직 전체의 데이터
+4. **02 AI 데이터 접근성**: 혼자 감당하기 버거운 데이터 요청 병목을 풀려면, 조직 전체의 데이터
    리터러시를 끌어올려야 한다는 결론에 도달했습니다.
 5. **03 dbt**: 그 과정에서 만든 시맨틱 모델(YAML)이 매번 손으로 갱신해야 하고, 실제와
    맞는지 검증할 수 없다는 한계에 부딪혔고, 이를 코드로 강제되는 구조로 바꾸는 방법을

@@ -1,4 +1,4 @@
-# 📊 02. DataOps & Text-to-SQL — 사내 데이터 리터러시 향상 프로젝트
+# 📊 02. AI 기반 데이터 접근성 — 교육부터 Text-to-SQL, MCP까지
 
 ---
 
@@ -170,14 +170,13 @@ graph TD
 ## 📁 프로젝트 구조
 
 ```
-02_DataOps-Text-to-SQL-Project/
+02_AI_DATA_ACCESS/
 ├── README.md
 ├── 01_SQL_Study_and_Templates/
-│   └── SQL_STYLE_GUIDE.md              (사내 SQL 작성 가이드 / 마스킹된 쿼리 템플릿)
+│   └── SQL_GUIDE.md              (사내 SQL 작성 가이드 / 마스킹된 쿼리 템플릿)
 ├── 02_Text_to_SQL_Agent/
-│   ├── cortex_semantic_model.yaml
-│   ├── wash_item_subscription_matching_model.yaml   (실제 사례 명세 샘플)
-│   └── images/                          (Agent 구축 예시, 실제 질의응답 캡처)
+│   ├── cortex_semantic_model_sample.yaml
+│   └── wash_item_subscription_matching_model.yaml   (실제 사례 명세 샘플)
 └── 03_Weather_MCP_Server/
     ├── README.md
     └── lambda_function_masked.py        (Lambda 기반 MCP 서버, 마스킹)
