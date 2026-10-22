@@ -86,6 +86,15 @@ Claude에게 자연어로 "이번 달 유료/오가닉 채널별 신규 가입�
 콘솔을 열어 직접 쿼리를 짜고, 채널 분류 기준을 다시 찾아보고, 결과를 취합해
 정리하는 과정이 필요했을 일입니다.
 
+#### 🔧 직접 만든 MCP 서버: 기상청 날씨 커넥터
+
+Snowflake MCP는 이미 만들어진 서버를 연동한 것이었다면, 다음 단계로 MCP 서버를 직접
+구현했습니다. 세탁 수요는 날씨의 영향을 크게 받는데 날씨는 매번 기상청 사이트에서 따로
+확인해야 했기 때문에, AWS Lambda(Python)로 기상청 API를 감싼 MCP 서버를 만들어 사내
+Claude에서 대화로 날씨를 조회할 수 있게 했습니다. 공개 엔드포인트라 설계 단계부터
+정보보호팀과 보안 조건을 맞췄습니다. 상세 내용은
+[03_Weather_MCP_Server](./03_Weather_MCP_Server)에 정리했습니다.
+
 ### 3. 프로젝트 성과
 
 | 시점 | 단순 데이터 추출 요청 빈도 (평균) |
@@ -154,7 +163,7 @@ graph TD
 - **전환**: 마침 Snowflake가 DB 히스토리와 주요 쿼리 학습을 지원하는 Autopilot 기능을 출시하면서, 자주 쓰이던 쿼리문을 기반으로 명세서 초안을 자동 생성하는 방식으로 전환했습니다. 이후 테이블 단위로 날짜 기준(KST/UTC), 상태값 필터 등을 사람이 검토·보정하는 하이브리드 방식으로 정착시켰습니다.
 
 ### 배포 현황
-- Phase 3(Text-to-SQL)는 실제 운영에 배포되어 사용 중이며, Phase 4(Claude-Snowflake MCP 연동)까지 이어져 AI 채널이 하나로 통합된 상태입니다.
+- Phase 3(Text-to-SQL)는 실제 운영에 배포되어 사용 중이며, Phase 4(Claude-Snowflake MCP 연동)까지 이어져 AI 채널이 하나로 통합된 상태입니다. 직접 구현한 날씨 MCP 서버도 사내 조직 커넥터로 배포되어 있습니다.
 
 ---
 
@@ -165,14 +174,17 @@ graph TD
 ├── README.md
 ├── 01_SQL_Study_and_Templates/
 │   └── SQL_STYLE_GUIDE.md              (사내 SQL 작성 가이드 / 마스킹된 쿼리 템플릿)
-└── 02_Text_to_SQL_Agent/
-    ├── cortex_semantic_model.yaml
-    ├── wash_item_subscription_matching_model.yaml   (실제 사례 명세 샘플)
-    └── images/                          (Agent 구축 예시, 실제 질의응답 캡처)
+├── 02_Text_to_SQL_Agent/
+│   ├── cortex_semantic_model.yaml
+│   ├── wash_item_subscription_matching_model.yaml   (실제 사례 명세 샘플)
+│   └── images/                          (Agent 구축 예시, 실제 질의응답 캡처)
+└── 03_Weather_MCP_Server/
+    ├── README.md
+    └── lambda_function_masked.py        (Lambda 기반 MCP 서버, 마스킹)
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-`Snowflake Cortex Analyst` `Snowflake Autopilot` `Snowflake Intelligence` `Claude` `MCP` `SQL`
+`Snowflake Cortex Analyst` `Snowflake Autopilot` `Snowflake Intelligence` `Claude` `MCP` `AWS Lambda` `SQL`
