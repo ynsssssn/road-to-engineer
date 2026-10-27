@@ -70,7 +70,7 @@ DBA 업무를 함께 맡으며, 분석·조회 트래픽을 로그 쉬핑 기반
 
 ## 🛠️ Tech Stack
 
-`AWS Lambda` `Docker` `Snowflake` `dbt` `Prophet` `scikit-learn` `Google Apps Script` `Slack API` `Python` `SQL` `PyMySQL` `MCP`
+`AWS Lambda` `Docker` `Snowflake` `dbt` `Prophet` `scikit-learn` `Google Apps Script` `Slack API` `Python` `SQL` `PyMySQL` `MCP` `MSSQL`
 
 
 
